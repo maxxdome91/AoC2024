@@ -8,6 +8,8 @@
 #include <regex>
 #include <set>
 #include <sstream>
+#include <__ranges/split_view.h>
+#include <__ranges/transform_view.h>
 
 
 namespace day1 {
@@ -113,7 +115,7 @@ namespace day2 {
      *
      * @param input vector of integers
      * @param increasing bool weather the input numbers should increase or not
-     * @return bool weather both conditions are fulfilled considering one mulligan oportunity
+     * @return bool weather both conditions are fulfilled considering one mulligan opportunity
      */
     bool conditionIsTrueSwap(const std::vector<int> &input, const bool increasing) {
         for (int i = 0; i < input.size() - 1; ++i) {
@@ -317,6 +319,141 @@ namespace day4 {
                 ++x;
             }
             ++y;
+        }
+        return result;
+    }
+}
+
+namespace day5 {
+    //one Rule; first must be updated before second if both in same update
+    struct Rule {
+        int first{};
+        int second{};
+
+        explicit Rule(const std::string &string) {
+            first = std::stoi(string.substr(0, string.find('|')));
+            second = std::stoi(string.substr(string.find('|') + 1));
+        }
+    };
+
+    //one Update containing several pages to be updated sequentially
+    struct Update {
+        std::vector<int> pages{};
+
+        explicit Update(std::string input) {
+            auto v = input | std::ranges::views::split(',') | std::ranges::views::transform([](auto r) {
+                return std::string(r.data(), r.size());
+            });
+            for (const auto vector = std::vector<std::string>{v.begin(), v.end()}; const auto &part: vector) {
+                pages.emplace_back(std::stoi(part));
+            }
+        }
+    };
+
+    //wrapper for a set of rules
+    struct RuleBook {
+        std::vector<Rule> rules{};
+
+        void emplace_rule(const std::string &rule) {
+            rules.emplace_back(rule);
+        }
+
+        /**
+         *
+         * @param update Update object
+         * @return all applicable rules regarding the Update
+         */
+        [[nodiscard]] std::vector<Rule> getApplicableRules(Update update) const {
+            std::vector<Rule> result{};
+            for (const auto &rule: rules) {
+                if (std::ranges::find(update.pages, rule.first) != update.pages.end() &&
+                    std::ranges::find(update.pages, rule.second) != update.pages.end()) {
+                    result.emplace_back(rule);
+                }
+            }
+            return result;
+        }
+    };
+
+    /**
+     * 
+     * @param update Update containing pages to be updated
+     * @param rules set of rules applicable for given Update
+     * @return value of page at middle index after reordering
+     */
+    int repairUpdate(Update update, const std::vector<Rule> &rules) {
+    beginning:
+        for (const auto &rule: rules) {
+            const auto itFirst = std::ranges::find(update.pages, rule.first);
+            if (const auto itSecond = std::ranges::find(update.pages, rule.second);
+                std::distance(itFirst, itSecond) < 0) {
+                std::swap(*itFirst, *itSecond);
+                goto beginning;
+            }
+        }
+        return update.pages.at((update.pages.size() - 1) / 2);
+    }
+
+    /**
+     *
+     * @param update Update containing pages in order of update
+     * @param ruleBook complete rulebook
+     * @param repair bool weather or not the update should be repaired 
+     * @return value of middle page of Update if correct, 0 else
+     */
+    int checkUpdate(Update &update, const RuleBook &ruleBook, const bool repair) {
+        for (const auto rules{ruleBook.getApplicableRules(update)}; const auto &rule: rules) {
+            const auto itFirst = std::ranges::find(update.pages, rule.first);
+            if (const auto itSecond = std::ranges::find(update.pages, rule.second);
+                std::distance(itFirst, itSecond) < 0) {
+                if (repair) {
+                    return repairUpdate(update, rules);
+                }
+                return 0;
+            }
+        }
+        if (repair) {
+            return 0;
+        }
+        return update.pages.at((update.pages.size() - 1) / 2);
+    }
+    
+    int solvePartOne(const std::vector<std::string> &input) {
+        int result{0};
+        RuleBook rules{};
+        auto it = input.begin();
+        //populate rulebook
+        for (; it != std::ranges::find(input, ""); ++it) {
+            rules.emplace_rule(*it);
+        }
+        ++it;
+        std::vector<Update> updates{};
+        //populate updates
+        for (; it != input.end(); ++it) {
+            updates.emplace_back(*it);
+        }
+        for (auto &update: updates) {
+            result += checkUpdate(update, rules, false);
+        }
+        return result;
+    }
+
+    int solvePartTwo(const std::vector<std::string> &input) {
+        int result{0};
+        RuleBook rules{};
+        auto it = input.begin();
+        //populate rulebook
+        for (; it != std::ranges::find(input, ""); ++it) {
+            rules.emplace_rule(*it);
+        }
+        ++it;
+        std::vector<Update> updates{};
+        //populate updates
+        for (; it != input.end(); ++it) {
+            updates.emplace_back(*it);
+        }
+        for (auto &update: updates) {
+            result += checkUpdate(update, rules, true);
         }
         return result;
     }

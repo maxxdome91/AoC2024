@@ -4,31 +4,19 @@
 #include "src/source.h"
 #include <map>
 #include <regex>
-#include <fstream>
 
-static constexpr int DAYS = 4;
+static constexpr int DAYS = 5;
 static const std::string INPUT_DIRECTORY = "/Users/max/CLionProjects/AoC2024/inputs/";
 
 std::map<std::string, std::function<int(std::vector<std::string>)> > functions = {
     {"d1p1", day1::solvePartOne}, {"d1p2", day1::solvePartTwo},
     {"d2p1", day2::solvePartOne}, {"d2p2", day2::solvePartTwo},
     {"d3p1", day3::solvePartOne}, {"d3p2", day3::solvePartTwo},
-    {"d4p1", day4::solvePartOne}, {"d4p2", day4::solvePartTwo}
+    {"d4p1", day4::solvePartOne}, {"d4p2", day4::solvePartTwo},
+    {"d5p1", day5::solvePartOne}, {"d5p2", day5::solvePartTwo}
 };
 
 int main() {
-    /*
-    //std::regex pattern(R"((mul\(\d{1,3}),\d{1,3}\)))");
-    std::regex test(R"(mul\((\d{1,3}),(\d{1,3})\))");
-    std::ifstream inputFile{"/Users/max/CLionProjects/AoC2024/inputs/input3.txt"};
-    std::string input;
-    std::getline(inputFile, input);
-    auto begin = std::sregex_iterator(input.begin(), input.end(), test);
-    while (begin != std::sregex_iterator()) {
-        std::cout << begin->str() << std::endl;
-        ++begin;
-    }
-    */
     for (int i = 1; i <= DAYS; ++i) {
         std::string inputPath = INPUT_DIRECTORY + std::format("input{}.txt", i);
         std::vector<std::string> input = readInputFile(inputPath);
