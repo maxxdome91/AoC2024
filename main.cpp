@@ -6,13 +6,14 @@
 #include <regex>
 #include <fstream>
 
-static constexpr int DAYS = 3;
+static constexpr int DAYS = 4;
 static const std::string INPUT_DIRECTORY = "/Users/max/CLionProjects/AoC2024/inputs/";
 
 std::map<std::string, std::function<int(std::vector<std::string>)> > functions = {
     {"d1p1", day1::solvePartOne}, {"d1p2", day1::solvePartTwo},
     {"d2p1", day2::solvePartOne}, {"d2p2", day2::solvePartTwo},
-    {"d3p1", day3::solvePartOne}, {"d3p2", day3::solvePartTwo}
+    {"d3p1", day3::solvePartOne}, {"d3p2", day3::solvePartTwo},
+    {"d4p1", day4::solvePartOne}, {"d4p2", day4::solvePartTwo}
 };
 
 int main() {

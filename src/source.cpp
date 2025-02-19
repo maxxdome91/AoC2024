@@ -4,6 +4,7 @@
 
 #include "source.h"
 
+#include <iostream>
 #include <regex>
 #include <set>
 #include <sstream>
@@ -173,6 +174,7 @@ namespace day3 {
     int solvePartOne(const std::vector<std::string> &input) {
         int result{0};
         std::regex regex(R"(mul\((\d{1,3}),(\d{1,3})\))");
+        //check each line against regex occurrences
         for (auto line: input) {
             auto mulIt = std::sregex_iterator(line.begin(), line.end(), regex);
             auto mulEnd = std::sregex_iterator();
@@ -215,15 +217,107 @@ namespace day3 {
 }
 
 namespace day4 {
-    auto transformVector(const std::vector<std::string> &input) {
-        
+    //used for bound check
+    int maxX{};
+    int maxY{};
+
+    /**
+     * Takes an origin (which should already be checked) and computes the number of occurrences regarding all 8 2D directions
+     * @param x x-coordinate of origin
+     * @param y y-coordinate of origin
+     * @param input vector of strings
+     * @param word string to check against
+     * @return number of word occurrences regarding all 8 2D directions
+     */
+    int checkForXMAS(const int x, const int y, const std::vector<std::string> &input, const std::string_view word) {
+        int result{0};
+        static const std::vector xDiff{-1, 0, 1, -1, 1, -1, 0, 1};
+        static const std::vector yDiff{-1, -1, -1, 0, 0, 1, 1, 1};
+        for (auto direction = 0; direction < 8; ++direction) {
+            auto wordIndex{0};
+            for (; wordIndex < word.size(); ++wordIndex) {
+                const auto newX{x + xDiff[direction] * (wordIndex + 1)};
+                const auto newY{y + yDiff[direction] * (wordIndex + 1)};
+                if (newX > maxX || newY > maxY || newX < 0 || newY < 0) {
+                    break;
+                }
+                if (input[newY][newX] == word[wordIndex]) {
+                    continue;
+                }
+                break;
+            }
+            if (wordIndex == word.size()) {
+                ++result;
+            }
+        }
+        return result;
     }
 
     int solvePartOne(const std::vector<std::string> &input) {
+        maxX = static_cast<int>(input[0].size()) - 1;
+        maxY = static_cast<int>(input.size() - 1);
+        int result{0};
+        for (int y = 0; const auto &line: input) {
+            for (int x = 0; const auto character: line) {
+                if (character == 'X') {
+                    result += checkForXMAS(x, y, input, "MAS");
+                }
+                ++x;
+            }
+            ++y;
+        }
+        return result;
+    }
 
+    /**
+     *
+     * @param x x coordinate of origin
+     * @param y y coordinate of origin
+     * @param input vector of strings
+     * @param word 3 letter string to check against
+     * @return bool weather or not the word is crossed in any way against the origin
+     */
+    bool checkForCrossedWord(const int x, const int y, const std::vector<std::string> &input,
+                             const std::string_view word) {
+        //algorithm only viable for word size 3
+        if (word.size() != 3) return false;
+        std::string reversedWord{word};
+        std::ranges::reverse(reversedWord);
+        if (const auto toCompare = std::string{input[y - 1][x - 1], input[y][x], input[y + 1][x + 1]};
+            toCompare != reversedWord && toCompare != word) {
+            return false;
+        }
+        if (const auto toCompare = std::string{input[y + 1][x - 1], input[y][x], input[y - 1][x + 1]};
+            toCompare != reversedWord && toCompare != word) {
+            return false;
+        }
+        return true;
     }
 
     int solvePartTwo(const std::vector<std::string> &input) {
-        return 0;
+        //check for maximum x and y coordinates
+        maxX = static_cast<int>(input[0].size()) - 1;
+        maxY = static_cast<int>(input.size() - 1);
+        int result{0};
+
+        //both x and y beginning at index 1 and counting to max - 1 since there are no crossed words at those indexes
+        for (int y = 0; const auto &line: input) {
+            if (y == 0 || y == maxY) {
+                ++y;
+                continue;
+            }
+            for (int x = 0; const auto character: line) {
+                if (x == 0 || x == maxX) {
+                    ++x;
+                    continue;
+                }
+                if (character == 'A') {
+                    result += checkForCrossedWord(x, y, input, "MAS");
+                }
+                ++x;
+            }
+            ++y;
+        }
+        return result;
     }
 }

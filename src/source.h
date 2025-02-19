@@ -2,12 +2,12 @@
 // Created by Maximilian Dornheim on 17.02.25.
 //
 
-#ifndef DAY1_H
-#define DAY1_H
+#ifndef SOURCE_H
+#define SOURCE_H
 #include <set>
 #include <vector>
 
-#endif //DAY1_H
+#endif //SOURCE_H
 
 namespace day1 {
     int solvePartOne(const std::vector<std::string> &input);
