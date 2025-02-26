@@ -33,3 +33,8 @@ namespace day5 {
     int solvePartOne(const std::vector<std::string> &input);
     int solvePartTwo(const std::vector<std::string> &input);
 }
+
+namespace day6 {
+    int solvePartOne(const std::vector<std::string> &input);
+    int solvePartTwo(const std::vector<std::string> &input);
+}

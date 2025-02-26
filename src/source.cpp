@@ -8,8 +8,9 @@
 #include <regex>
 #include <set>
 #include <sstream>
-#include <__ranges/split_view.h>
-#include <__ranges/transform_view.h>
+#include <ranges>
+#include <chrono>
+#include <algorithm>
 
 
 namespace day1 {
@@ -417,7 +418,7 @@ namespace day5 {
         }
         return update.pages.at((update.pages.size() - 1) / 2);
     }
-    
+
     int solvePartOne(const std::vector<std::string> &input) {
         int result{0};
         RuleBook rules{};
@@ -454,6 +455,231 @@ namespace day5 {
         }
         for (auto &update: updates) {
             result += checkUpdate(update, rules, true);
+        }
+        return result;
+    }
+}
+
+namespace day6 {
+    size_t maxY;
+    size_t maxX;
+
+    enum Direction { UP, RIGHT, DOWN, LEFT };
+
+    struct Position {
+        int x;
+        int y;
+        Direction direction;
+
+        Position(const int _x, const int _y, const Direction _direction = UP) : x{_x}, y{_y}, direction{_direction} {
+        }
+
+        friend bool operator<(const Position &lhs, const Position &rhs) {
+            if (lhs.x < rhs.x)
+                return true;
+            if (rhs.x < lhs.x)
+                return false;
+            return lhs.y < rhs.y;
+        }
+
+        friend bool operator<=(const Position &lhs, const Position &rhs) {
+            return rhs >= lhs;
+        }
+
+        friend bool operator>(const Position &lhs, const Position &rhs) {
+            return rhs < lhs;
+        }
+
+        friend bool operator>=(const Position &lhs, const Position &rhs) {
+            return !(lhs < rhs);
+        }
+
+        friend bool operator==(const Position &lhs, const Position &rhs) {
+            return lhs.x == rhs.x
+                   && lhs.y == rhs.y;
+        }
+
+        friend bool operator!=(const Position &lhs, const Position &rhs) {
+            return !(lhs == rhs);
+        }
+    };
+
+    class Guard {
+    public:
+        std::vector<Position> path;
+        std::set<Position> visited;
+        Position position;
+
+        [[nodiscard]] std::vector<Position> getPath() const {
+            return path;
+        }
+
+        [[nodiscard]] Position getPosition() const {
+            return position;
+        }
+
+        void setPosition(const Position &position) {
+            this->position = position;
+        }
+
+        explicit Guard(const Position position) : path{position}, visited{position}, position{position} {
+        }
+
+        /**
+         * turns the guard 90 degrees to the right
+         */
+        void turnRight() {
+            switch (position.direction) {
+                case UP: position.direction = RIGHT;
+                    break;
+                case RIGHT: position.direction = DOWN;
+                    break;
+                case DOWN: position.direction = LEFT;
+                    break;
+                case LEFT: position.direction = UP;
+                    break;
+            }
+        }
+
+        /**
+         *
+         * @param board playboard
+         * @return weather or not there is an obstacle ahead
+         */
+        [[nodiscard]] bool obstacleAhead(const std::vector<std::string> &board) const {
+            switch (position.direction) {
+                case UP:
+                    if (board[position.y - 1][position.x] == '#') return true;
+                    break;
+                case RIGHT:
+                    if (board[position.y][position.x + 1] == '#') return true;
+                    break;
+                case DOWN:
+                    if (board[position.y + 1][position.x] == '#') return true;
+                    break;
+                case LEFT:
+                    if (board[position.y][position.x - 1] == '#') return true;
+                    break;
+            }
+            return false;
+        }
+
+        /**
+         * function which performs one step ahead or one turn to the right, if there is an obstacle ahead. does not
+         * update path variable, only visited variable
+         * @param board arena of the guard
+         * @return weather or not the step can be made inside the arena
+         */
+        bool step(const std::vector<std::string> &board) {
+            switch (position.direction) {
+                case UP:
+                    if (position.y == 0) return false;
+                    if (obstacleAhead(board)) {
+                        turnRight();
+                        return true;
+                    }
+                    --position.y;
+                    visited.insert(position);
+                    return true;
+                case RIGHT:
+                    if (position.x == maxX - 1) return false;
+                    if (obstacleAhead(board)) {
+                        turnRight();
+                        return true;
+                    }
+                    ++position.x;
+                    visited.insert(position);
+                    return true;
+                case DOWN:
+                    if (position.y == maxY - 1) return false;
+                    if (obstacleAhead(board)) {
+                        turnRight();
+                        return true;
+                    }
+                    ++position.y;
+                    visited.insert(position);
+                    return true;
+                case LEFT:
+                    if (position.x == 0) return false;
+                    if (obstacleAhead(board)) {
+                        turnRight();
+                        return true;
+                    }
+                    --position.x;
+                    visited.insert(position);
+                    return true;
+                default: return false;
+            }
+        }
+    };
+
+    /**
+     *
+     * @param board arena of the guard
+     * @return starting coordinates of the guard
+     */
+    std::pair<int, int> findStart(const std::vector<std::string> &board) {
+        for (int y = 0; y < board.size(); ++y) {
+            for (int x = 0; x < board[0].size(); ++x) {
+                if (board[y][x] == '^') {
+                    return {x, y};
+                }
+            }
+        }
+        return {0, 0};
+    }
+
+    /**
+     *
+     * @param position position to check against
+     * @param path walked path
+     * @return weather or not ecaxt position has already been visited
+     */
+    bool posInVec(const Position position, const std::vector<Position> &path) {
+        return std::ranges::any_of(path, [&position](const Position &pos) {
+            return pos.x == position.x && pos.y == position.y && pos.direction == position.direction;
+        });
+    }
+
+
+    int solvePartOne(const std::vector<std::string> &input) {
+        maxY = input.size();
+        maxX = input[0].size();
+        auto [fst, snd] = findStart(input);
+        Guard guard{Position{fst, snd, UP}};
+        while (guard.step(input)) {
+        };
+        return static_cast<int>(guard.visited.size());
+    }
+
+
+    int solvePartTwo(const std::vector<std::string> &input) {
+        int result{0};
+        maxY = input.size();
+        maxX = input[0].size();
+        auto [fst, snd] = findStart(input);
+        Guard guard{Position{fst, snd, UP}};
+        while (guard.step(input)) {
+        };
+
+        //erase starting Position; crucial for loop detection
+        guard.visited.erase(Position{fst, snd, UP});
+
+        //loop through all visited sports as obstacles need to be placed in these locations
+        for (const auto spot: guard.visited) {
+            std::vector alteredBoard{input};
+            alteredBoard[spot.y][spot.x] = '#';
+            auto circleGuard = Guard{Position{fst, snd, UP}};
+            int i{0};
+            while (circleGuard.step(alteredBoard)) {
+                //checking only every 2500th time reduces runtime
+                if (i % 2500 == 0 && posInVec(circleGuard.position, circleGuard.getPath())) {
+                    ++result;
+                    break;
+                }
+                circleGuard.path.emplace_back(circleGuard.position);
+                ++i;
+            }
         }
         return result;
     }
