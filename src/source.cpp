@@ -543,7 +543,7 @@ namespace day6 {
 
         /**
          *
-         * @param board playboard
+         * @param board play board
          * @return weather or not there is an obstacle ahead
          */
         [[nodiscard]] bool obstacleAhead(const std::vector<std::string> &board) const {
@@ -633,7 +633,7 @@ namespace day6 {
      *
      * @param position position to check against
      * @param path walked path
-     * @return weather or not ecaxt position has already been visited
+     * @return weather or not exact position has already been visited
      */
     bool posInVec(const Position position, const std::vector<Position> &path) {
         return std::ranges::any_of(path, [&position](const Position &pos) {
@@ -680,6 +680,213 @@ namespace day6 {
                 circleGuard.path.emplace_back(circleGuard.position);
                 ++i;
             }
+        }
+        return result;
+    }
+}
+
+namespace day7 {
+    enum OPERATIONS { ADD, MUL };
+
+    enum EXTENDED_OPERATIONS { ADDITION, MULTIPLICATION, CONCATENATION };
+
+    struct OperationWrapper {
+        std::vector<EXTENDED_OPERATIONS> operations;
+
+        explicit OperationWrapper(const int n) : operations(n, ADDITION) {
+        }
+
+        OperationWrapper() = delete;
+
+        bool nextCombination(int i) {
+        begin:
+            switch (operations[i]) {
+                case ADDITION:
+                    operations[i] = MULTIPLICATION;
+                    return true;
+                case MULTIPLICATION:
+                    operations[i] = CONCATENATION;
+                    return true;
+                case CONCATENATION:
+                    if (operations.size() > i + 1) {
+                        operations[i] = ADDITION;
+                        ++i;
+                        goto begin;
+                    }
+                    return false;
+            }
+            return false;
+        }
+
+        /**
+         * cycles through all combinations of the EXTENDED_OPERATIONS
+         * @return weather or not there is a next combination
+         */
+        bool nextCombination() {
+            switch (operations[0]) {
+                case ADDITION:
+                    operations[0] = MULTIPLICATION;
+                    return true;
+                case MULTIPLICATION:
+                    operations[0] = CONCATENATION;
+                    return true;
+                case CONCATENATION:
+                    if (operations.size() > 1) {
+                        operations[0] = ADDITION;
+                        return nextCombination(1);
+                    }
+                    return false;
+            }
+            return false;
+        }
+    };
+
+
+    /**
+     * generates a vector of i * ADD and (size - i) * MUL Operations
+     * @param i integer of how many ADD Operations to ADD
+     * @param size size of output vector
+     * @return vector of operations
+     */
+    std::vector<OPERATIONS> generateOperations(const int i, const size_t size) {
+        std::vector<OPERATIONS> operations{};
+        operations.reserve(size);
+        for (int j = 0; j < i; ++j) {
+            operations.emplace_back(ADD);
+        }
+        while (operations.size() < size) {
+            operations.emplace_back(MUL);
+        }
+        return operations;
+    }
+
+
+    /**
+     *
+     * @param numbers vector of numbers
+     * @param operations vector of operations
+     * @return result of calculation
+     */
+    unsigned long performCalculation(const std::vector<unsigned long> &numbers,
+                                     const std::vector<OPERATIONS> &operations) {
+        unsigned long result{0};
+        for (int i = 0; i < operations.size(); ++i) {
+            if (i == 0) {
+                switch (operations[i]) {
+                    case ADD:
+                        result += numbers[i] + numbers[i + 1];
+                        break;
+                    case MUL:
+                        result += numbers[i] * numbers[i + 1];
+                        break;
+                }
+            } else {
+                switch (operations[i]) {
+                    case ADD:
+                        result += numbers[i + 1];
+                        break;
+                    case MUL:
+                        result *= numbers[i + 1];
+                        break;
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * performs the same as performCalculation, but includes the concatenation operator
+     * @param numbers vector of numbers
+     * @param operations vector of operations
+     * @return result of calculation
+     */
+    unsigned long performExtendedCalculation(const std::vector<unsigned long> &numbers,
+                                             const std::vector<EXTENDED_OPERATIONS> &operations) {
+        unsigned long result{0};
+        if (operations.empty()) {
+            return numbers[0];
+        }
+        for (int i = 0; i < operations.size(); ++i) {
+            if (i == 0) {
+                switch (operations[i]) {
+                    case ADDITION:
+                        result += numbers[i] + numbers[i + 1];
+                        break;
+                    case MULTIPLICATION:
+                        result += numbers[i] * numbers[i + 1];
+                        break;
+                    case CONCATENATION:
+                        result += std::stoul(std::to_string(numbers[i]) + std::to_string(numbers[i + 1]));
+                        break;
+                }
+            } else {
+                switch (operations[i]) {
+                    case ADDITION:
+                        result += numbers[i + 1];
+                        break;
+                    case MULTIPLICATION:
+                        result *= numbers[i + 1];
+                        break;
+                    case CONCATENATION:
+                        result = std::stoul(std::to_string(result) + std::to_string(numbers[i + 1]));
+                        break;
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     *
+     * @param line string with a target and numbers, seperated by 2 spaces
+     * @return pair of unsigned long target and vector<unsigned long> numbers
+     */
+    auto getTargetAndNumbers(const std::string &line) {
+        unsigned long target{};
+        unsigned long toAdd{};
+        std::vector<unsigned long> numbers{};
+        std::stringstream ss(line);
+        ss >> target;
+        ss.ignore(2);
+        while (ss >> toAdd) {
+            numbers.emplace_back(toAdd);
+        }
+        return std::make_pair(target, numbers);
+    }
+
+    unsigned long solvePartOne(const std::vector<std::string> &input) {
+        unsigned long result{0};
+        for (const auto &line: input) {
+            auto [target, numbers] = getTargetAndNumbers(line);
+            for (int i = 0; i < numbers.size(); ++i) {
+                std::vector<OPERATIONS> operations = generateOperations(i, numbers.size() - 1);
+                do {
+                    if (performCalculation(numbers, operations) == target) {
+                        result += target;
+                        goto end;
+                    }
+                } while (std::ranges::next_permutation(operations).found);
+            }
+        end:
+
+        }
+        return result;
+    }
+
+    unsigned long solvePartTwo(const std::vector<std::string> &input) {
+        unsigned long result{0};
+        for (const auto &line: input) {
+            auto [target, numbers] = getTargetAndNumbers(line);
+            OperationWrapper operations{static_cast<int>(numbers.size() - 1)};
+            do {
+                if (performExtendedCalculation(numbers, operations.operations) == target) {
+                    result += target;
+                    goto end;
+                }
+            } while (operations.nextCombination());
+        end:
+
+
         }
         return result;
     }
