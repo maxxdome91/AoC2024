@@ -5,7 +5,7 @@
 #include <map>
 #include <regex>
 
-static constexpr int DAYS = 7;
+static constexpr int DAYS = 8;
 static const std::string INPUT_DIRECTORY = "/Users/max/CLionProjects/AoC2024/inputs/";
 
 std::map<std::string, std::function<unsigned long(std::vector<std::string>)> > functions = {
@@ -15,12 +15,13 @@ std::map<std::string, std::function<unsigned long(std::vector<std::string>)> > f
     {"d4p1", day4::solvePartOne}, {"d4p2", day4::solvePartTwo},
     {"d5p1", day5::solvePartOne}, {"d5p2", day5::solvePartTwo},
     {"d6p1", day6::solvePartOne}, {"d6p2", day6::solvePartTwo},
-    {"d7p1", day7::solvePartOne}, {"d7p2", day7::solvePartTwo}
+    {"d7p1", day7::solvePartOne}, {"d7p2", day7::solvePartTwo},
+    {"d8p1", day8::solvePartOne}, {"d8p2", day8::solvePartTwo}
 };
 
 int main() {
     //int i starts at 1 regarding day 1
-    for (int i = 1; i <= DAYS; ++i) {
+    for (int i = 8; i <= DAYS; ++i) {
         std::string inputPath = INPUT_DIRECTORY + std::format("input{}.txt", i);
         const std::vector<std::string> input = readInputFile(inputPath);
         std::cout << "Day " << i << ":\n";

@@ -11,6 +11,7 @@
 #include <ranges>
 #include <chrono>
 #include <algorithm>
+#include <map>
 
 
 namespace day1 {
@@ -869,6 +870,8 @@ namespace day7 {
             }
         end:
 
+
+
         }
         return result;
     }
@@ -887,7 +890,137 @@ namespace day7 {
         end:
 
 
+
         }
         return result;
+    }
+}
+
+namespace day8 {
+    struct location {
+        int x;
+        int y;
+
+        auto operator<=>(const location &) const = default;
+    };
+
+    struct antenna {
+        char frequency;
+        location location;
+
+        auto operator<=>(const antenna &) const = default;
+    };
+
+
+    /**
+     *
+     * @param input vector of strings containing input
+     * @return pair<set<char>, multimap<char, antenna>>; the set containing the distinct frequencies and the map each
+     * antenna location.
+     */
+    auto getFrequencies(const std::vector<std::string> &input) {
+        std::multimap<char, antenna> result{};
+        std::set<char> frequencies;
+        for (int i = 0; i < input.size(); ++i) {
+            for (int j = 0; j < input[i].size(); ++j) {
+                if (input[i][j] == '.') {
+                    continue;
+                }
+                result.emplace(input[i][j], antenna{input[i][j], j, i});
+                frequencies.emplace(input[i][j]);
+            }
+        }
+        return std::make_pair(frequencies, result);
+    }
+
+    size_t maxY{0};
+    size_t maxX{0};
+
+    /**
+     *
+     * @param antennaLocations multimap containing all antenna locations
+     * @param frequency specific frequency to look for
+     * @param result set of locations taking antinode locations
+     */
+    void getAntinodes(std::multimap<char, antenna> &antennaLocations, const char frequency,
+                      std::set<location> &result) {
+        auto [fst, snd] = antennaLocations.equal_range(frequency);
+        std::vector<std::multimap<char, antenna>::iterator> locations{};
+        for (auto it = fst; it != snd; ++it) {
+            locations.emplace_back(it);
+        }
+        for (int i = 0; i < locations.size(); ++i) {
+            antenna first = locations[i]->second;
+            for (int j = i + 1; j < locations.size(); ++j) {
+                antenna second = locations[j]->second;
+                auto firstY = first.location.y + (first.location.y - second.location.y);
+                auto firstX = first.location.x + (first.location.x - second.location.x);
+                auto secondY = second.location.y + (second.location.y - first.location.y);
+                auto secondX = second.location.x + (second.location.x - first.location.x);
+                if (firstY >= 0 && firstY <= maxY && firstX >= 0 && firstX <= maxX) {
+                    result.emplace(firstX, firstY);
+                }
+                if (secondY >= 0 && secondY <= maxY && secondX >= 0 && secondX <= maxX) {
+                    result.emplace(secondX, secondY);
+                }
+            }
+        }
+    }
+
+    int solvePartOne(const std::vector<std::string> &input) {
+        maxY = input.size() - 1;
+        maxX = input[0].size() - 1;
+        std::set<location> result{};
+        for (auto [frequencies, antennaMap] = getFrequencies(input); const auto frequency: frequencies) {
+            getAntinodes(antennaMap, frequency, result);
+        }
+        return static_cast<int>(result.size());
+    }
+
+    /**
+     *
+     * @param antennaLocations multimap containing all antenna locations
+     * @param frequency specific frequency to look for
+     * @param result set of locations taking antinode locations
+     */
+    void getAntinodesPartTwo(std::multimap<char, antenna> &antennaLocations, const char frequency,
+                             std::set<location> &result) {
+        auto [fst, snd] = antennaLocations.equal_range(frequency);
+        std::vector<std::multimap<char, antenna>::iterator> locations{};
+        for (auto it = fst; it != snd; ++it) {
+            locations.emplace_back(it);
+        }
+        for (int i = 0; i < locations.size(); ++i) {
+            antenna first = locations[i]->second;
+            result.emplace(first.location.x, first.location.y);
+            for (int j = i + 1; j < locations.size(); ++j) {
+                antenna second = locations[j]->second;
+                result.emplace(second.location.x, second.location.y);
+                auto firstY = first.location.y + (first.location.y - second.location.y);
+                auto firstX = first.location.x + (first.location.x - second.location.x);
+                auto secondY = second.location.y + (second.location.y - first.location.y);
+                auto secondX = second.location.x + (second.location.x - first.location.x);
+                while (firstY >= 0 && firstY <= maxY && firstX >= 0 && firstX <= maxX) {
+                    result.emplace(firstX, firstY);
+                    firstY += (first.location.y - second.location.y);
+                    firstX += (first.location.x - second.location.x);
+                }
+                while (secondY >= 0 && secondY <= maxY && secondX >= 0 && secondX <= maxX) {
+                    result.emplace(secondX, secondY);
+                    secondY += (second.location.y - first.location.y);
+                    secondX += (second.location.x - first.location.x);
+                }
+            }
+        }
+    }
+
+    int solvePartTwo(const std::vector<std::string> &input) {
+        maxY = input.size() - 1;
+        maxX = input[0].size() - 1;
+        std::set<location> result{};
+        for (auto [frequencies, antennaMap] = getFrequencies(input); auto frequency: frequencies) {
+            getAntinodesPartTwo(antennaMap, frequency, result);
+        }
+        return static_cast<int>(result.size());
     }
 }
