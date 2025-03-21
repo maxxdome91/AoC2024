@@ -48,3 +48,8 @@ namespace day8 {
     int solvePartOne(const std::vector<std::string> &input);
     int solvePartTwo(const std::vector<std::string> &input);
 }
+
+namespace day9 {
+    unsigned long solvePartOne(const std::vector<std::string> &input);
+    unsigned long solvePartTwo(const std::vector<std::string> &input);
+}

@@ -12,6 +12,7 @@
 #include <chrono>
 #include <algorithm>
 #include <map>
+#include <list>
 
 
 namespace day1 {
@@ -1022,5 +1023,169 @@ namespace day8 {
             getAntinodesPartTwo(antennaMap, frequency, result);
         }
         return static_cast<int>(result.size());
+    }
+}
+
+namespace day9 {
+    struct ID {
+        int id;
+
+        auto operator<=>(const ID &) const = default;
+    };
+
+    struct Entry {
+        int id;
+        int size;
+
+        auto operator<=>(const Entry &) const = default;
+    };
+
+    /**
+     * 
+     * @param input input string
+     * @return vector<ID> of block-formatted output
+     */
+    std::vector<ID> formatToBlocks(const std::string &input) {
+        std::vector<ID> result{};
+        int index{0};
+        bool data{true};
+        std::stringstream ss{};
+        for (const auto character: input) {
+            const int length = character - '0';
+            if (data) {
+                for (int i = 0; i < length; ++i) {
+                    result.emplace_back(index);
+                }
+                ++index;
+                data = false;
+            } else {
+                for (int i = 0; i < length; ++i) {
+                    result.emplace_back(-1);
+                }
+                data = true;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * moves the IDs to free spaces on the left side
+     * @param input vector<ID> block-formatted by formatToBlocks
+     */
+    void moveBlocks(std::vector<ID> &input) {
+        auto front = input.begin();
+        auto back = input.end();
+        --back;
+        while (back->id == -1) {
+            --back;
+        }
+        while (front <= back) {
+            if (front->id == -1 && back->id != -1) {
+                std::swap(*front, *back);
+                ++front;
+                --back;
+            } else {
+                while (front->id != -1) {
+                    ++front;
+                }
+                while (back->id == -1) {
+                    --back;
+                }
+            }
+        }
+    }
+
+    unsigned long solvePartOne(const std::vector<std::string> &input) {
+        unsigned long result{0};
+        std::vector<ID> blocks = formatToBlocks(input[0]);
+        moveBlocks(blocks);
+        std::erase(blocks, ID{-1});
+        for (int i = 0; i < blocks.size(); ++i) {
+            result += i * (blocks[i].id);
+        }
+        return result;
+    }
+
+    /**
+     *
+     * @param input input string
+     * @return list<Entry> of block-formatted output
+     */
+    std::list<Entry> formatToEntries(const std::string &input) {
+        std::list<Entry> result{};
+        int index{0};
+        bool data{true};
+        for (const auto character: input) {
+            int length = character - '0';
+            if (data) {
+                if (length != 0) {
+                    result.emplace_back(index, length);
+                }
+                ++index;
+                data = false;
+            } else {
+                if (length != 0) {
+                    result.emplace_back(-1, length);
+                }
+                data = true;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * tries to move Entries from right to left one time
+     * @param input list<Entry> block-formatted by formatToEntries
+     */
+    void moveEntries(std::list<Entry> &input) {
+        const auto front = input.begin();
+        auto back = input.end();
+        --back;
+        while (back->id == -1) {
+            --back;
+        }
+        while (back != front) {
+            while (back->id == -1) {
+                --back;
+            }
+            auto searchIt = input.begin();
+            while (searchIt != back) {
+                if (searchIt->id != -1) {
+                    ++searchIt;
+                    continue;
+                }
+                if (searchIt->size < back->size) {
+                    ++searchIt;
+                    continue;
+                }
+                searchIt->size -= back->size;
+                const auto id = back->id;
+                const auto size = back->size;
+                back->id = -1;
+                input.insert(searchIt, {id, size});
+                if (searchIt->size == 0) {
+                    input.erase(searchIt);
+                }
+                break;
+            }
+            --back;
+        }
+    }
+
+    unsigned long solvePartTwo(const std::vector<std::string> &input) {
+        unsigned long result{0};
+        std::list<Entry> entries = formatToEntries(input[0]);
+        moveEntries(entries);
+        unsigned long index{0};
+        for (const auto [id, size]: entries) {
+            if (id == -1) {
+                index += size;
+                continue;
+            }
+            for (int i = 0; i < size; ++i, ++index) {
+                result += index * id;
+            }
+        }
+        return result;
     }
 }
